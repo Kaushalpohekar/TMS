@@ -35,12 +35,14 @@ async function userDevices(req, res) {
 
 async function addDevice(req, res) {
   console.log("entered into adddevice");
-  const { DeviceUID, DeviceLocation, DeviceName, SMS, email, type, DeviceType } = req.body;
-  const CompanyId = req.user?.CompanyId; // Ensure CompanyId is retrieved correctly
+  const { DeviceUID, DeviceLocation, DeviceName,CompanyEmail, SMS, email, type, DeviceType } = req.body;
+  const [companyResult] = await db.promise().query(getCompanyIdQuery, [CompanyEmail]);
 
-  if (!CompanyId) {
-    return res.status(400).json({ message: 'CompanyId is missing or invalid' });
+  if (companyResult.length === 0) {
+    return res.status(404).json({ message: 'Company not found with the given email' });
   }
+
+  const CompanyId = companyResult[0].CompanyId;
 
   console.log(req.user);
   try {
@@ -99,7 +101,7 @@ async function editDevice(req, res) {
     // Update device details
     const updateDeviceQuery = `
             UPDATE tms_devices 
-            SET DeviceLocation = ?, DeviceName = ?, SMS = ?, email = ?, type = ? 
+            SET DeviceLocation = ?, DeviceName = ?, 
             WHERE DeviceUID = ? AND CompanyId = ?
         `;
 
@@ -149,37 +151,38 @@ async function editCompanyDetails(req, res) {
 }
 
 
-
-async function updatePersonalDetails(req, res) {
+const updatePersonalDetails = async (req, res) => {
   try {
-    const UserId = req.user.UserId;
-    const { Username, FirstName, LastName, UserType, PersonalEmail, Designation } = req.body;
+      const { UserId } = req.user; // Extract UserId from token
+      const updates = req.body; // Get only the fields the user wants to update
 
+      if (Object.keys(updates).length === 0) {
+          return res.status(400).json({ error: "No fields provided for update" });
+      }
 
+      // Dynamically create SQL query and values based on provided fields
+      const fields = Object.keys(updates).map(field => `${field} = ?`).join(", ");
+      const values = Object.values(updates);
+      values.push(UserId); // Add UserId at the end for WHERE condition
 
-    // ✅ Check if the user exists in the database
-    const userCheckQuery = "SELECT * FROM tms_users WHERE UserId = ?";
-    const [userCheckResult] = await db.promise().query(userCheckQuery, [UserId]);
+      // Execute update query
+      const [result] = await db.promise().query(
+          `UPDATE tms_users SET ${fields} WHERE UserId = ?`,
+          values
+      );
 
-    if (userCheckResult.length === 0) {
-      return res.status(404).json({ message: "User not found!" });
-    }
+      if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "User not found or no changes made" });
+      }
 
-    // ✅ Update user details in `tms_users` table
-    const userDetailQuery = `
-            UPDATE tms_users 
-            SET Username = ?, FirstName = ?, LastName = ?, UserType = ?, PersonalEmail = ?, Designation = ? 
-            WHERE UserId = ?
-        `;
-
-    await db.promise().query(userDetailQuery, [Username, FirstName, LastName, UserType, PersonalEmail, Designation, UserId]);
-
-    res.json({ message: "Personal details updated successfully!" });
+      res.json({ message: "User details updated successfully" });
   } catch (error) {
-    console.error("Error updating personal details:", error);
-    res.status(500).json({ message: "Internal server error" });
+      console.error("Error updating user details:", error);
+      res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
+
+
 
 
 
@@ -189,9 +192,7 @@ async function updatePassword(req, res) {
     const UserId = req.user.UserId;
     const { Password } = req.body;
 
-    if (!Password) {
-      return res.status(400).json({ message: "Password is required." });
-    }
+    
 
     // ✅ Check if the user exists in the database
     const userCheckQuery = "SELECT * FROM tms_users WHERE UserId = ?";
@@ -218,13 +219,12 @@ async function updatePassword(req, res) {
 
 
 async function addDeviceTrigger(req, res) {
-  console.log("entered into addDeviceTrigger");
-
+  
   const UserId = req.user.UserId;
-  const { DeviceUID, TriggerValue, CompanyEmail, ContactNo } = req.body;
+  const { DeviceUID, TriggerValue, CompanyEmail } = req.body;
 
   try {
-    const insertTriggerQuery = 'INSERT INTO tms_trigger (DeviceUID, TriggerValue, CompanyEmail, ContactNo, UserId) VALUES (?,?,?,?,?)';
+    const insertTriggerQuery = 'INSERT INTO tms_trigger (DeviceUID, TriggerValue, CompanyEmail, UserId) VALUES (?,?,?,?)';
 
     // Use promise-based query
     const [insertResult] = await db.promise().query(insertTriggerQuery, [DeviceUID, TriggerValue, CompanyEmail, ContactNo, UserId]);
@@ -241,7 +241,7 @@ async function addDeviceTrigger(req, res) {
 function editDeviceTrigger(req, res) {
 
   const deviceId = req.params.deviceId;
-  const { TriggerValue, CompanyEmail, ContactNo } = req.body;
+  const { TriggerValue, CompanyEmail } = req.body;
   const deviceCheckQuery = 'SELECT * FROM tms_trigger WHERE DeviceUID = ?';
 
   db.query(deviceCheckQuery, [deviceId], (error, deviceCheckResult) => {
@@ -252,9 +252,9 @@ function editDeviceTrigger(req, res) {
 
     try {
       if (deviceCheckResult.length === 0) {
-        const insertTriggerQuery = 'INSERT INTO tms_trigger (DeviceUID, TriggerValue, CompanyEmail,ContactNo) VALUES (?,?,?,?)';
+        const insertTriggerQuery = 'INSERT INTO tms_trigger (DeviceUID, TriggerValue, CompanyEmail) VALUES (?,?,?)';
 
-        db.query(insertTriggerQuery, [deviceId, TriggerValue, CompanyEmail, ContactNo], (error, insertResult) => {
+        db.query(insertTriggerQuery, [deviceId, TriggerValue, CompanyEmail], (error, insertResult) => {
           if (error) {
             console.error('Error while inserting device:', error);
             return res.status(500).json({ message: 'Internal server error' });
@@ -264,9 +264,10 @@ function editDeviceTrigger(req, res) {
         });
       } else {
 
-        const updateDeviceTriggerQuery = 'UPDATE tms_trigger SET TriggerValue = ?, CompanyEmail = ? WHERE DeviceUID = ? AND TriggerID=?';
+       
+        const updateDeviceTriggerQuery = 'UPDATE tms_trigger SET TriggerValue = ?, CompanyEmail = ? WHERE DeviceUID = ? ';
 
-        db.query(updateDeviceTriggerQuery, [TriggerValue, CompanyEmail, deviceId, "1"], (error, updateResult) => {
+        db.query(updateDeviceTriggerQuery, [TriggerValue, CompanyEmail, deviceId], (error, updateResult) => {
           if (error) {
             console.error('Error updating device trigger:', error);
             return res.status(500).json({ message: 'Internal server error' });
@@ -289,7 +290,19 @@ function getDeviceDetails(req, res) {
 
     // Validate the deviceId parameter if necessary
 
-    const deviceDetailsQuery = 'SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId=?';
+    const deviceDetailsQuery = `
+      SELECT 
+        d.*, 
+        c.CompanyEmail, 
+        c.CompanyName 
+      FROM 
+        tms_devices d
+      JOIN 
+        tms_companies c ON d.CompanyId = c.CompanyId
+      WHERE 
+        d.DeviceUID = ? AND d.CompanyId = ?
+    `;
+
     db.query(deviceDetailsQuery, [deviceId, CompanyId], (error, deviceDetail) => {
       if (error) {
         console.error('Error fetching data:', error);
@@ -311,7 +324,7 @@ function getDeviceDetails(req, res) {
 
 async function getUserData(req, res) {
   try {
-    console.log(req.user);
+    
     const UserId = req.user.UserId;
     const CompanyId = req.user.CompanyId;
 
@@ -324,7 +337,7 @@ async function getUserData(req, res) {
         WHERE UserId = ?`;
 
     const userCompanyQuery = `
-        SELECT CompanyName, CompanyEmail, ContactNo 
+        SELECT CompanyName, CompanyEmail, ContactNo ,Location
         FROM tms_companies 
         WHERE CompanyId = ?`;
 
@@ -356,15 +369,9 @@ async function getUserData(req, res) {
 
 async function UpdateMail(req, res) {
   try {
-    const DeviceUID = req.params.deviceId;
+    const DeviceUID = req.params.DeviceUID;
     const { Mail } = req.body;
     const CompanyId = req.user.CompanyId;
-
-    console.log("Executing UpdateMail function...");
-
-    console.log(CompanyId);
-    console.log(DeviceUID);
-
 
     // Step 1: Verify if the device exists and belongs to the company
     const [deviceResult] = await db.promise().query(
@@ -401,20 +408,14 @@ async function UpdateMail(req, res) {
 
 async function UpdateWhatsapp(req, res) {
   try {
-    const deviceId = req.params.deviceId;
+    const DeviceUID = req.params.DeviceUID;
     const { Whatsapp } = req.body;
     const CompanyId = req.user.CompanyId;
-
-    console.log("Executing UpdateWhatsapp function...");
-    console.log("CompanyId:", CompanyId);
-    console.log("DeviceUID:", deviceId);
-
-
-
+    
     // Step 1: Verify if the device exists and belongs to the company
     const [deviceResult] = await db.promise().query(
       'SELECT CompanyId FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?',
-      [deviceId, CompanyId]
+      [DeviceUID, CompanyId]
     );
 
     if (deviceResult.length === 0) {
@@ -424,7 +425,7 @@ async function UpdateWhatsapp(req, res) {
     // Step 2: Update the Whatsapp field in the database
     const [updateResult] = await db.promise().query(
       'UPDATE tms_trigger SET Whatsapp = ? WHERE DeviceUID = ?',
-      [Whatsapp, deviceId]
+      [Whatsapp, DeviceUID]
     );
 
     if (updateResult.affectedRows === 0) {
@@ -441,84 +442,113 @@ async function UpdateWhatsapp(req, res) {
 
 
 function getTriggerData(req, res) {
-  const UserId = req.user.UserId;
+  const CompanyId = req.user.CompanyId;
 
-  const getquery = 'SELECT * FROM tms_trigger WHERE UserId=?';
+  // Join tms_trigger with companies table to fetch data using CompanyId
+  
+  const joinQuery = `
+  SELECT 
+    t.TriggerId,
+    t.DeviceUID,
+    t.TriggerValue,
+    t.UserId,
+    t.CompanyEmail,
+    t.ContactNo,
+    t.timestamp,
+    t.interval,
+    t.Whatsapp,
+    t.Mail,
+    t.interval_start,
+    t.interval_end,
+    u.personalemail,
+    c.CompanyName,
+    d.deviceName
+  FROM 
+    tms_trigger t
+  JOIN 
+    tms_companies c ON t.CompanyEmail = c.CompanyEmail
+  LEFT JOIN 
+    tms_users u ON t.UserId = u.UserId
+  LEFT JOIN 
+  tms_devices d ON t.DeviceUID = d.DeviceUID 
+  WHERE 
+    c.CompanyId = ?
+`;
 
-  try {
-    db.query(getquery, [UserId], (error, getresult) => {
-      if (error) {
-        console.error('Error getting user data:', error);
-        return res.status(500).json({ message: 'Internet server error' });
-      }
-      res.status(200).json(getresult);
-    })
-  }
-  catch (error) {
-    console.error('Error occured check:', error)
-    res.status(500).json({ message: 'Error in fetching data' })
-  }
-}
-
-async function updateTrigger(req, res) {
-  const deviceId = req.params.deviceId;
-  const { PersonalEmail, TriggerValue, ContactNO, interval } = req.body;
-  const CompanyId = req.user.CompanyId; // Assuming `req.user` contains company details
-
-  try {
-
-
-    //  Check if the device exists and belongs to the company
-    const [deviceResult] = await db.promise().query(
-      "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
-      [deviceId, CompanyId]
-    );
-
-    if (deviceResult.length === 0) {
-      return res.status(404).json({ message: "Device not found or not linked to your company" });
+  db.query(joinQuery, [CompanyId], (error, result) => {
+    if (error) {
+      console.error('Error executing join query:', error);
+      return res.status(500).json({ message: 'Error fetching trigger data' });
     }
 
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'No trigger data found for this company' });
+    }
+
+    res.status(200).json(result);
+  });
+}
 
 
-    // Update `tms_trigger` table
+
+
+function updateTrigger(req, res) {
+  const DeviceUID = req.params.deviceId;
+  const { PersonalEmail, TriggerValue, ContactNO, DeviceName, interval } = req.body;
+
+   //  Check if the device exists and belongs to the company
+   const [deviceResult] =  db.promise().query(
+    "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
+    [DeviceUID, CompanyId]
+  );
+
+  if (deviceResult.length === 0) {
+    return res.status(404).json({ message: "Device not found or not linked to your company" });
+  }
+
+  // Step 1: Get UserId from tms_users using PersonalEmail
+  const getUserIdQuery = `
+    SELECT UserId FROM tms_users WHERE personalemail = ?
+  `;
+
+  db.query(getUserIdQuery, [PersonalEmail], (getUserError, userResult) => {
+    if (getUserError || userResult.length === 0) {
+      console.error('Error fetching UserId:', getUserError || 'No user found');
+      return res.status(404).json({ message: 'No user found with this PersonalEmail' });
+    }
+
+    const userId = userResult[0].UserId;
+
+    // Step 2: Update tms_trigger with new values and UserId
     const updateTriggerQuery = `
       UPDATE tms_trigger 
-      SET  TriggerValue = ?, ContactNO = ?,  \`interval\` = ?
+      SET UserId = ?, TriggerValue = ?, ContactNO = ?, DeviceName = ?, \`interval\` = ?
       WHERE DeviceUID = ?
     `;
 
-    const [updateResult] = await db.promise().query(updateTriggerQuery, [
-      TriggerValue,
-      ContactNO,
+    db.query(updateTriggerQuery, [userId, TriggerValue, ContactNO, DeviceName, interval, DeviceUID], (updateErr, updateResult) => {
+      if (updateErr) {
+        console.error('Error updating tms_trigger:', updateErr);
+        return res.status(500).json({ message: 'Error updating trigger' });
+      }
 
-      interval,
-      deviceId
-    ]);
-
-    if (updateResult.affectedRows === 0) {
-      return res.status(400).json({ message: "No changes made to trigger data" });
-    }
-
-    res.status(200).json({ message: "Trigger updated successfully", updateResult });
-
-  } catch (error) {
-    console.error("Error updating trigger:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
+      res.status(200).json({ message: 'Trigger updated successfully', result: updateResult });
+    });
+  });
 }
 
 
 async function deletetriggeruser(req, res) {
-  const deviceId = req.params.deviceId;
+  const DeviceUID = req.params.DeviceUID;
   const CompanyId = req.user.CompanyId; // Ensure `req.user` is set properly
 
   console.log(CompanyId);
-  console.log(deviceId);
+  console.log(DeviceUID);
   try {
     // 1️⃣ Check if the device exists and belongs to the company
     const [deviceResult] = await db.promise().query(
       "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
-      [deviceId, CompanyId]
+      [DeviceUID, CompanyId]
     );
 
     if (deviceResult.length === 0) {
@@ -527,7 +557,7 @@ async function deletetriggeruser(req, res) {
 
     // 2️⃣ Delete from `tms_trigger`
     const deleteQuery = "DELETE FROM tms_trigger WHERE DeviceUID = ?";
-    const [deleteResult] = await db.promise().query(deleteQuery, [deviceId]);
+    const [deleteResult] = await db.promise().query(deleteQuery, [DeviceUID]);
 
     if (deleteResult.affectedRows === 0) {
       return res.status(400).json({ message: "No trigger found for the given device" });
@@ -544,9 +574,33 @@ async function deletetriggeruser(req, res) {
 
 function fetchDeviceTrigger(req, res) {
   const deviceId = req.params.deviceId;
-  const deviceTriggerQuery = 'select * from tms_trigger where DeviceUID = ?';
+  
+  
+  const query = `
+    SELECT 
+      trg.DeviceUID,
+      trg.TriggerValue,
+      trg.CompanyEmail,
+      trg.ContactNo,
+      usr.PersonalEmail,
+      trg.timestamp,
+      cmp.CompanyName AS company_name,
+      dev.DeviceName,
+      trg.interval,
+      trg.Whatsapp,
+      trg.Mail,
+      trg.interval_start,
+      trg.interval_end
+    FROM tms_v2.tms_trigger trg
+    LEFT JOIN tms_v2.tms_devices dev ON trg.DeviceUID = dev.DeviceUID
+    LEFT JOIN tms_v2.tms_users usr ON trg.UserId = usr.UserId
+    LEFT JOIN tms_v2.tms_companies cmp ON dev.CompanyId = cmp.CompanyId
+    WHERE trg.DeviceUID = ?
+    LIMIT 1
+  `;
+  console.log(deviceId);
   try {
-    db.query(deviceTriggerQuery, [deviceId], (error, devicetriggerkResult) => {
+    db.query(query, [deviceId], (error, devicetriggerkResult) => {
       if (error) {
         console.error('Error during device check:', error);
         return res.status(500).json({ message: 'Internal server error' });
@@ -564,15 +618,13 @@ function fetchDeviceTrigger(req, res) {
 
 function fetchAllDeviceTrigger(req, res) {
 
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized: Invalid User' });
-  }
-  const UserId = req.user.UserId;
-
-  const deviceTriggerQuery = 'select * from tms_trigger where UserId = ?';
+  
+  const companyEmail = req.user.companyEmail;
+  
+  const deviceTriggerQuery = 'select * from tms_trigger where CompanyEmail = ?';
 
   try {
-    db.query(deviceTriggerQuery, [UserId], (error, triggers) => {
+    db.query(deviceTriggerQuery, [companyEmail], (error, triggers) => {
       if (error) {
         console.error('Error during device check:', error);
         return res.status(500).json({ message: 'Internal server error' });
@@ -782,7 +834,7 @@ function getDataByTimeInterval(req, res) {
   }
 }
 
-/// test
+
 
 
 
@@ -931,7 +983,15 @@ function fetchCompanyUser(req, res) {
   const CompanyId = req.user.CompanyId;
   console.log(CompanyId);
   try {
-    const query = 'SELECT UserId, FirstName, LastName, UserType, PersonalEmail, Designation, is_online FROM tms_users where CompanyId = ?';
+    const query = `
+    SELECT 
+      u.UserId, u.FirstName, u.LastName, u.UserType,
+      u.PersonalEmail, u.Designation, u.is_online,
+      c.ContactNo, c.Location
+    FROM tms_users u
+    JOIN tms_companies c ON u.CompanyId = c.CompanyId
+    WHERE u.CompanyId = ?
+  `;
     db.query(query, [CompanyId], (error, users) => {
       if (error) {
         throw new Error('Error fetching users');
@@ -1336,6 +1396,7 @@ function deleteDevice(req, res) {
   }
 }
 
+
 function editUser(req, res) {
   const UserId = req.user.UserId;
   const { FirstName, LastName, PersonalEmail, Designation, UserType } = req.body;
@@ -1405,7 +1466,7 @@ WHERE d.CompanyId = ? `;
     status: null
   };
 
-  console.log("here is the problem");
+  
   db.query(optimizedQuery, [CompanyId], (error, results) => {
     if (error) {
       return res.status(500).json({ message: 'Error while fetching data', error });
@@ -1427,7 +1488,7 @@ WHERE d.CompanyId = ? `;
   });
 };
 
-
+//test
 function fetchDeviceTotal(req, res) {
   const deviceUID = req.params.deviceUID;
   const CompanyId = req.user.CompanyId;
@@ -1602,3 +1663,5 @@ module.exports = {
   last5alerts
 
 }
+
+

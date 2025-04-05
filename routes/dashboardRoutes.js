@@ -15,21 +15,21 @@ router.put('/editDeviceTrigger/:deviceId', authenticateUser, dashController.edit
 router.get('/live-device-detail/:deviceId', authenticateUser, dashController.getDeviceDetails);
 
 router.get('/user-data', authenticateUser, dashController.getUserData);
-router.put('/UpdateMail/:deviceId', authenticateUser, dashController.UpdateMail);
-router.put('/UpdateWhatsapp/:deviceId', authenticateUser, dashController.UpdateWhatsapp);
-router.get('/getTriggerDataForAlert', authenticateUser, dashController.getTriggerData);
+router.put('/UpdateMail/:DeviceUID', authenticateUser, dashController.UpdateMail);
+router.put('/UpdateWhatsapp/:DeviceUID', authenticateUser, dashController.UpdateWhatsapp);
+router.get('/getTriggerDataForAlert', authenticateUser, dashController.getTriggerData);//test
 router.put('/updateTrigger/:deviceId', authenticateUser, dashController.updateTrigger);
 
-router.put('/deletetrigger/:deviceId', authenticateUser, dashController.deletetriggeruser);
+router.put('/deletetrigger/:DeviceUID', authenticateUser, dashController.deletetriggeruser);
 
 router.get('/device-trigger/:deviceId', authenticateUser, dashController.fetchDeviceTrigger);
 
 router.get('/All-device-trigger', authenticateUser, dashController.fetchAllDeviceTrigger);
-router.get('/data/:deviceId/intervals', authenticateUser, dashController.getDataByTimeInterval);
+router.get('/data/:deviceId/intervals', authenticateUser, dashController.getDataByTimeInterval);//
 
-router.get('/avginterval/:deviceUID/:interval', authenticateUser, dashController.avg_interval);
-router.get('/data/:deviceUID', authenticateUser, dashController.getDataByCustomDate);
-router.get('/live-device-status/:deviceUID', authenticateUser, dashController.getLiveStatusDetails);
+router.get('/avginterval/:deviceUID/:interval', authenticateUser, dashController.avg_interval);//
+router.get('/data/:deviceUID', authenticateUser, dashController.getDataByCustomDate);//
+router.get('/live-device-status/:deviceUID', authenticateUser, dashController.getLiveStatusDetails);//
 router.get('/company-users', authenticateUser, dashController.fetchCompanyUser);
 router.post('/barChartCustom/:deviceUID', authenticateUser, dashController.barChartCustom);
 router.get('/Total-Volume-Month', authenticateUser, dashController.getTotalVolumeForMonth);
@@ -37,7 +37,7 @@ router.get('/Total-Volume-Today', authenticateUser, dashController.getTotalVolum
 router.get('/ConsuptionByIntervalBar/:deviceUID', authenticateUser, dashController.getTotalVolumeForDuration);
 router.get('/ConsuptionByCustomBar/:deviceId/:startDate/:endDate', authenticateUser, dashController.getWaterConsumptionForDateRange);
 router.delete('/delete-device/:deviceUID', authenticateUser, dashController.deleteDevice);
-router.put('/edit-User', authenticateUser, dashController.editUser);
+router.put('/edit-User', authenticateUser, dashController.editUser);//use updatePersonalDetails instead
 router.get('/fetchLatestEntry', authenticateUser, dashController.fetchLatestEntry);
 router.get('/FetchTodayConsumption/:deviceUID', authenticateUser, dashController.fetchDeviceTotal);
 router.put('/editDeviceFromSetting/:deviceUID', authenticateUser, dashController.editDeviceFromSetting);

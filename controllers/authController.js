@@ -81,15 +81,7 @@ async function registerUser(req, res) {
       userType
     } = req.body;
 
-    // Ensure all fields are provided
-    if (!companyName || !companyEmail || !contact || !location || !firstName || !lastName || !personalEmail || !designation || !password || !confirmPassword || !userType) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    // Ensure passwords match
-    if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Password and Confirm Password do not match" });
-    }
+  
 
     // Check if personal email already exists
     const [personalEmailCheck] = await db.promise().query(

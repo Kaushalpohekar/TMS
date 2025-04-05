@@ -13,8 +13,8 @@ const app = express();
 const port = 8080;
 
 // CORS Configuration
-// const allowedOrigins = ['http://localhost:4200', 'localhost:4200', 'http://localhost:4000', 'localhost:4000']; // Update with your actual allowed origins
-// const allowedOrigins=['http://localhost:8080'];
+// const allowedOrigins = ['http://localhost:4200', 'localhost:4200', 'http://localhost:4000', 'localhost:4000','http://localhost:8080','localhost:8080']; // Update with your actual allowed origins
+
 
 // app.use((req, res, next) => {
 //   const origin = req.headers.origin || req.headers.host; // Use host if origin is undefined
@@ -34,7 +34,7 @@ app.use(express.json());
 app.use(bodyParser.json());
 
 
-app.use('/',authRoute);
+app.use('/api',authRoute);
 app.use('/dash',dashRoute);
 
 
