@@ -12,8 +12,8 @@ router.post('/re-verify-mail', authController.resendToken);
 router.post('/forgot', authController.forgotPassword);
 router.post('/resend-forgot', authController.resendResetToken);
 router.post('/reset-password', authController.resetPassword);
-router.put('/setUserOnline',authenticateUser, authController.setUserOnline);
-router.put('/setUserOffline',authenticateUser, authController.setUserOffline);
+router.put('/setUserOnline/:UserId',authenticateUser, authController.setUserOnline);
+router.put('/setUserOffline/:UserId',authenticateUser, authController.setUserOffline);
 router.put('/users/:UserId/block', authenticateUser,authController.Block);
 
 
