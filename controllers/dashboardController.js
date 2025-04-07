@@ -118,7 +118,7 @@ async function editCompanyDetails(req, res) {
   try {
     const { UserId, CompanyId, userType } = req.user;
 
-    const { CompanyName, CompanyEmail, ContactNo, Location } = req.body;
+    const { CompanyName, CompanyEmail, ContactNo, Location ,Designation} = req.body;
     console.log("User Data:", req.user);
 
     // ✅ Check if user is connected to the company and is an admin
@@ -133,14 +133,21 @@ async function editCompanyDetails(req, res) {
       return res.status(403).json({ message: "Forbidden: Only Admins can edit company details." });
     }
 
+
+    const updateUserQuery = `
+    UPDATE tms_users 
+    SET Designation = ?
+    WHERE UserId = ?
+  `;
+  await db.promise().query(updateUserQuery, [Designation, UserId]);
+
     // ✅ Update the company details in the correct table (tms_companies)
     const updateCompanyQuery = `
-    UPDATE tms_companies 
-    SET CompanyName = ?, CompanyEmail = ?, ContactNo = ?, Location = ? 
-    WHERE CompanyId = ?
-`;
-
-    await db.promise().query(updateCompanyQuery, [CompanyName, CompanyEmail, ContactNo, Location, CompanyId]);
+      UPDATE tms_companies 
+      SET ContactNo = ?, Location = ?
+      WHERE CompanyId = ?
+    `;
+    await db.promise().query(updateCompanyQuery, [ContactNo, Location, CompanyId]);
 
     res.json({ message: "Company details updated successfully!" });
 
