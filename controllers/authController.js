@@ -544,8 +544,10 @@ function resetPassword(req, res) {
 
 
 function setUserOnline(req, res) {
+  console.log(req.user);
   const UserId = req.user.UserId;
 
+  console.log(UserId);
   // Generate a UUID for the set user online process
   const setUserOnlineId = uuidv4();
 
