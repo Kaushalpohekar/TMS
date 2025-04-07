@@ -24,8 +24,8 @@ connection.getConnection((err, conn) => {
     } else {
       console.log(`Connected to database: ${results[0].db_name} (Connection ID: ${conn.threadId})`);
     }
-  conn.release();
-});
+    conn.release();
+  });
 });
 
 module.exports = connection;
