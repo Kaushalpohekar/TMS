@@ -34,11 +34,12 @@ router.get('/Company-users/:CompanyEmail', authenticateUser, dashController.fetc
 router.post('/barChartCustom/:deviceId', authenticateUser, dashController.barChartCustom);
 router.get('/Total-Volume-Month/:deviceId', authenticateUser, dashController.getTotalVolumeForMonth);
 router.get('/Total-Volume-Today/:deviceId', authenticateUser, dashController.getTotalVolumeForToday);
+router.get('/Total-Volume-Today-Email/:CompanyEmail', authenticateUser, dashController.getTotalVolumeForTodayEmail);
 router.get('/ConsuptionByIntervalBar/:deviceId', authenticateUser, dashController.getTotalVolumeForDuration);
 router.get('/ConsuptionByCustomBar/:deviceId/:startDate/:endDate', authenticateUser, dashController.getWaterConsumptionForDateRange);
 router.delete('/delete-device/:deviceUID', authenticateUser, dashController.deleteDevice);
 router.put('/edit-User/:userId', authenticateUser, dashController.editUser);//use updatePersonalDetails instead
-router.get('/fetchLatestEntryAllDevices', authenticateUser, dashController.fetchLatestEntry);
+router.get('/fetchLatestEntry/:companyEmail', authenticateUser, dashController.fetchLatestEntry);
 router.get('/FetchTodayConsumption/:deviceID', authenticateUser, dashController.fetchDeviceTotal);
 router.put('/editDeviceFromSetting/:deviceID', authenticateUser, dashController.editDeviceFromSetting);
 router.get('/lastalerts/:deviceUID', authenticateUser, dashController.last5alerts);
