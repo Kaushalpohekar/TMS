@@ -1592,7 +1592,7 @@ async function getTotalVolumeForTodayEmail(req, res) {
 
   try {
     // Step 1: Get CompanyEmail using CompanyID
-    const emailQuery = `SELECT CompanyEmail FROM company WHERE CompanyID = ?`;
+    const emailQuery = `SELECT CompanyEmail FROM tms_companies WHERE CompanyID = ?`;
     const emailResult = await executeQuery(emailQuery, [CompanyID]);
 
     if (emailResult.length === 0) {
@@ -1652,7 +1652,7 @@ const fetchLatestEntry = async (req, res) => {
 
   try {
     // Step 1: Get CompanyEmail from CompanyID
-    const emailQuery = `SELECT CompanyEmail FROM company WHERE CompanyID = ?`;
+    const emailQuery = `SELECT CompanyEmail FROM tms_companies WHERE CompanyID = ?`;
     const emailResult = await executeQuery(emailQuery, [CompanyID]);
 
     if (emailResult.length === 0) {
