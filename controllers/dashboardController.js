@@ -1579,8 +1579,9 @@ function last5alerts(req, res) {
 
 // API to get total volume data for today and yesterday
 async function getTotalVolumeForTodayEmail(req, res) {
-  const { CompanyID } = req.user; // Assumed set by authentication middleware
+  const { CompanyId } = req.user; // Assumed set by authentication middleware
 
+  console.log(CompanyId);
   const executeQuery = (query, params) => {
     return new Promise((resolve, reject) => {
       db.query(query, params, (error, results) => {
@@ -1591,15 +1592,15 @@ async function getTotalVolumeForTodayEmail(req, res) {
   };
 
   try {
-    // Step 1: Get CompanyEmail using CompanyID
-    const emailQuery = `SELECT CompanyEmail FROM tms_companies WHERE CompanyID = ?`;
-    const emailResult = await executeQuery(emailQuery, [CompanyID]);
+    // // Step 1: Get CompanyEmail using CompanyID
+    // const emailQuery = `SELECT CompanyEmail FROM tms_companies WHERE CompanyID = ?`;
+    // const emailResult = await executeQuery(emailQuery, [CompanyId]);
 
-    if (emailResult.length === 0) {
-      return res.status(404).json({ message: 'Company not found' });
-    }
+    // if (emailResult.length === 0) {
+    //   return res.status(404).json({ message: 'Company not found' });
+    // }
 
-    const CompanyEmail = emailResult[0].CompanyEmail;
+    // const CompanyEmail = emailResult[0].CompanyEmail;
 
     // Step 2: Get total volume data for today and yesterday
     const fetchVolumeQuery = `
@@ -1614,13 +1615,13 @@ async function getTotalVolumeForTodayEmail(req, res) {
       LEFT JOIN 
         clean_data c ON d.DeviceUID = c.DeviceUID
       WHERE 
-        d.CompanyEmail = ?
+        d.CompanyId = ?
         AND d.DeviceType IN ('ws', 'fs', 'ts')
       GROUP BY 
         d.DeviceUID;
     `;
 
-    const results = await executeQuery(fetchVolumeQuery, [CompanyEmail]);
+    const results = await executeQuery(fetchVolumeQuery, [CompanyId]);
 
     // Step 3: Format the result
     const formattedData = {};
@@ -1639,8 +1640,10 @@ async function getTotalVolumeForTodayEmail(req, res) {
 }
 
 const fetchLatestEntry = async (req, res) => {
-  const { CompanyID } = req.user;
+  console.log(req.user);
+  const  CompanyId = req.user.CompanyId;
 
+  console.log(CompanyId);
   const executeQuery = (query, params) => {
     return new Promise((resolve, reject) => {
       db.query(query, params, (error, results) => {
@@ -1651,40 +1654,25 @@ const fetchLatestEntry = async (req, res) => {
   };
 
   try {
-    // Step 1: Get CompanyEmail from CompanyID
-    const emailQuery = `SELECT CompanyEmail FROM tms_companies WHERE CompanyID = ?`;
-    const emailResult = await executeQuery(emailQuery, [CompanyID]);
-
-    if (emailResult.length === 0) {
-      return res.status(404).json({ message: 'Company not found' });
-    }
-
-    const CompanyEmail = emailResult[0].CompanyEmail;
-
+    
     // Step 2: Query for latest actual_data entry per DeviceUID
     const optimizedQuery = `
-      WITH LatestEntries AS (
-        SELECT ad.DeviceUID, MAX(ad.TimeStamp) AS LatestTimeStamp
-        FROM actual_data ad FORCE INDEX (idx_device_timestamp)
-        WHERE ad.TimeStamp >= NOW() - INTERVAL 7 DAY
-        GROUP BY ad.DeviceUID
-      )
-      SELECT 
-        d.DeviceUID, 
-        ad.EntryID, ad.Temperature, ad.TemperatureR, ad.TemperatureY, ad.TemperatureB,
-        ad.Humidity, ad.flowRate, ad.totalVolume, ad.TimeStamp, ad.ip_address, ad.status
-      FROM 
-        tms_devices d
-      LEFT JOIN 
-        LatestEntries le ON d.DeviceUID = le.DeviceUID
-      LEFT JOIN 
-        actual_data ad FORCE INDEX (idx_device_timestamp) 
-        ON ad.DeviceUID = le.DeviceUID AND ad.TimeStamp = le.LatestTimeStamp
-      WHERE 
-        d.CompanyEmail = ?;
-    `;
+  WITH LatestEntries AS (
+      SELECT ad.DeviceUID, MAX(ad.TimeStamp) AS LatestTimeStamp
+      FROM actual_data ad FORCE INDEX (idx_device_timestamp)
+      WHERE ad.TimeStamp >= NOW() - INTERVAL 7 DAY
+      GROUP BY ad.DeviceUID
+  )
+  SELECT d.DeviceUID, ad.EntryID, ad.Temperature, ad.TemperatureR, ad.TemperatureY, ad.TemperatureB,
+         ad.Humidity, ad.flowRate, ad.totalVolume, ad.TimeStamp, ad.ip_address, ad.status
+  FROM tms_devices d
+  LEFT JOIN LatestEntries le ON d.DeviceUID = le.DeviceUID
+  LEFT JOIN actual_data ad FORCE INDEX (idx_device_timestamp)
+         ON ad.DeviceUID = le.DeviceUID AND ad.TimeStamp = le.LatestTimeStamp
+  WHERE d.CompanyId = ?;
+`;
 
-    const results = await executeQuery(optimizedQuery, [CompanyEmail]);
+    const results = await executeQuery(optimizedQuery, [CompanyId]);
 
     const defaultEntry = {
       EntryID: 0,
