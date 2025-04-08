@@ -493,51 +493,69 @@ function getTriggerData(req, res) {
 
 
 
+async function updateTrigger(req, res) {
+  try {
+    const { DeviceUID } = req.params;
+    const { PersonalEmail, TriggerValue, ContactNO, DeviceName, interval } = req.body;
 
-function updateTrigger(req, res) {
-  const DeviceUID = req.params.DeviceUID;
-  const { PersonalEmail, TriggerValue, ContactNO, DeviceName, interval } = req.body;
+    // 1. Check if DeviceUID exists in tms_trigger
+    const [triggerResult] = await db.promise().query(
+      "SELECT * FROM tms_trigger WHERE DeviceUID = ?",
+      [DeviceUID]
+    );
 
-   //  Check if the device exists and belongs to the company
-   const [deviceResult] =  db.promise().query(
-    "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
-    [DeviceUID, CompanyId]
-  );
+    if (triggerResult.length > 0) {
+      const trigger = triggerResult[0];
+      
+      const [UserResult] = await db.promise().query(
+        "SELECT * FROM tms_users WHERE PersonalEmail = ?",
+        [PersonalEmail]
+      );
 
-  if (deviceResult.length === 0) {
-    return res.status(404).json({ message: "Device not found or not linked to your company" });
-  }
-
-  // Step 1: Get UserId from tms_users using PersonalEmail
-  const getUserIdQuery = `
-    SELECT UserId FROM tms_users WHERE personalemail = ?
-  `;
-
-  db.query(getUserIdQuery, [PersonalEmail], (getUserError, userResult) => {
-    if (getUserError || userResult.length === 0) {
-      console.error('Error fetching UserId:', getUserError || 'No user found');
-      return res.status(404).json({ message: 'No user found with this PersonalEmail' });
-    }
-
-    const userId = userResult[0].UserId;
-
-    // Step 2: Update tms_trigger with new values and UserId
-    const updateTriggerQuery = `
-      UPDATE tms_trigger 
-      SET UserId = ?, TriggerValue = ?, ContactNO = ?, DeviceName = ?, \`interval\` = ?
-      WHERE DeviceUID = ?
-    `;
-
-    db.query(updateTriggerQuery, [userId, TriggerValue, ContactNO, DeviceName, interval, DeviceUID], (updateErr, updateResult) => {
-      if (updateErr) {
-        console.error('Error updating tms_trigger:', updateErr);
-        return res.status(500).json({ message: 'Error updating trigger' });
+      if (UserResult.length === 0) {
+        return res.status(404).json({ message: "User not found" });
       }
 
-      res.status(200).json({ message: 'Trigger updated successfully', result: updateResult });
-    });
-  });
+
+      const UserId = UserResult[0].UserId;
+
+      // 3. Update trigger info
+      const updateTriggerQuery = `
+        UPDATE tms_trigger 
+        SET UserId=? , TriggerValue = ?, ContactNo = ?, \`interval\` = ?
+        WHERE DeviceUID = ?
+      `;
+      await db.promise().query(updateTriggerQuery, [
+        UserId,
+        TriggerValue,
+        ContactNO,
+        interval,
+        DeviceUID
+      ]);
+
+      return res.status(200).json({ message: "Trigger and user's email updated successfully." });
+
+    } else {
+      // 4. Fallback: update tms_devices if trigger not found
+      const updateDeviceQuery = `
+        UPDATE tms_devices 
+        SET DeviceName = ?
+        WHERE DeviceUID = ?
+      `;
+      await db.promise().query(updateDeviceQuery, [
+        DeviceName,
+        DeviceUID
+      ]);
+
+      return res.status(200).json({ message: "Device updated in tms_devices (fallback)." });
+    }
+
+  } catch (error) {
+    console.error("Error in updateTriggerSmart:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
 }
+
 
 
 async function deletetriggeruser(req, res) {
