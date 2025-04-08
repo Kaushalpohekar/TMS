@@ -74,16 +74,11 @@ async function addDevice(req, res) {
 
 async function editDevice(req, res) {
   try {
-    console.log("Entered into editDevice");
-
+    
     const deviceId = req.params.deviceId;
     const { CompanyId, userType } = req.user; // Extracting user data from request
 
-    const { DeviceLocation, DeviceName, SMS, email, type } = req.body;
-
-    console.log("User Data:", req.user);
-    console.log("Device ID:", deviceId);
-    console.log("userType :", userType);
+    const { DeviceLocation, DeviceName } = req.body;
 
     // Ensure the user is an admin
     if (userType.toLowerCase() !== 'admin') {
@@ -98,14 +93,14 @@ async function editDevice(req, res) {
       return res.status(404).json({ message: "Device not found ." });
     }
 
-    // Update device details
     const updateDeviceQuery = `
-            UPDATE tms_devices 
-            SET DeviceLocation = ?, DeviceName = ?, 
-            WHERE DeviceUID = ? AND CompanyId = ?
-        `;
+    UPDATE tms_devices 
+    SET DeviceLocation = ?, DeviceName = ?
+    WHERE DeviceUID = ? AND CompanyId = ?
+`;
 
-    await db.promise().query(updateDeviceQuery, [DeviceLocation, DeviceName, SMS, email, type, deviceId, CompanyId]);
+
+    await db.promise().query(updateDeviceQuery, [DeviceLocation, DeviceName, deviceId, CompanyId]);
 
     res.json({ message: "Device updated successfully!" });
   } catch (error) {
@@ -500,7 +495,7 @@ function getTriggerData(req, res) {
 
 
 function updateTrigger(req, res) {
-  const DeviceUID = req.params.deviceId;
+  const DeviceUID = req.params.DeviceUID;
   const { PersonalEmail, TriggerValue, ContactNO, DeviceName, interval } = req.body;
 
    //  Check if the device exists and belongs to the company
@@ -958,7 +953,7 @@ function getDataByCustomDate(req, res) {
 
 function getLiveStatusDetails(req, res) {
   try {
-    const deviceUID = req.params.deviceUID;
+    const deviceUID = req.params.deviceId;
 
     // Validate the deviceId parameter if necessary
 
