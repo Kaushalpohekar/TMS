@@ -360,7 +360,7 @@ async function getUserData(req, res) {
       }
     }
 
-    res.status(200).json(userData);
+    res.status(200).json({userDetail:userData});
 
   } catch (error) {
     console.error('An error occurred:', error);
