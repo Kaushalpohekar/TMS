@@ -499,8 +499,8 @@ function getTriggerData(req, res) {
       company_name: row.CompanyName,
       DeviceName: row.deviceName,
       interval: row.interval,
-      Whatsapp: row.Whatsapp,
-      Mail: row.Mail,
+      Whatsapp: String(row.Whatsapp),
+      Mail: String(row.Mail),
       interval_start: row.interval_start,
       interval_end: row.interval_end
     }));
