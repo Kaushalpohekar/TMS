@@ -33,18 +33,52 @@ async function userDevices(req, res) {
 
 
 
+// async function addDevice(req, res) {
+  
+//   const { DeviceUID, DeviceLocation, DeviceName,CompanyEmail, SMS, email, type, DeviceType } = req.body;
+//   const [companyResult] = await db.promise().query(getCompanyIdQuery, [CompanyEmail]);
+
+//   if (companyResult.length === 0) {
+//     return res.status(404).json({ message: 'Company not found with the given email' });
+//   }
+
+//   const CompanyId = companyResult[0].CompanyId;
+
+//   console.log(req.user);
+//   try {
+//     // Check if device already exists
+//     const checkDeviceQuery = 'SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?';
+//     const [checkResult] = await db.promise().query(checkDeviceQuery, [DeviceUID, CompanyId]);
+
+//     if (checkResult.length > 0) {
+//       return res.status(400).json({ message: 'Device already added' });
+//     }
+
+//     // Insert new device
+//     const insertDeviceQuery = `
+//             INSERT INTO tms_devices 
+//             (DeviceUID, DeviceLocation, DeviceName, CompanyId, IssueDate, SMS, email, type, DeviceType, endDate) 
+//             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 365 DAY))`;
+
+//     await db.promise().query(insertDeviceQuery, [DeviceUID, DeviceLocation, DeviceName, CompanyId, SMS, email, type, DeviceType]);
+
+//     return res.json({ message: 'Device added successfully!' });
+
+//   } catch (error) {
+//     console.error('Database error:', error);
+//     return res.status(500).json({ message: 'Internal server error' });
+//   }
+// }
+
+
 async function addDevice(req, res) {
-  console.log("entered into adddevice");
-  const { DeviceUID, DeviceLocation, DeviceName,CompanyEmail, SMS, email, type, DeviceType } = req.body;
-  const [companyResult] = await db.promise().query(getCompanyIdQuery, [CompanyEmail]);
-
-  if (companyResult.length === 0) {
-    return res.status(404).json({ message: 'Company not found with the given email' });
-  }
-
-  const CompanyId = companyResult[0].CompanyId;
-
+  const { DeviceUID, DeviceLocation, DeviceName, DeviceTrigger, DeviceType } = req.body;
   console.log(req.user);
+  const CompanyId = req.user.CompanyId; // from logged-in user
+  const UserId = req.user.UserId;       // assumed from req.user
+  const CompanyEmail = req.user.CompanyEmail; // assumed from req.user
+  const ContactNo = req.user.ContactNo || null; // optional from user object
+
   try {
     // Check if device already exists
     const checkDeviceQuery = 'SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?';
@@ -56,20 +90,31 @@ async function addDevice(req, res) {
 
     // Insert new device
     const insertDeviceQuery = `
-            INSERT INTO tms_devices 
-            (DeviceUID, DeviceLocation, DeviceName, CompanyId, IssueDate, SMS, email, type, DeviceType, endDate) 
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 365 DAY))`;
+      INSERT INTO tms_devices 
+      (DeviceUID, DeviceLocation, DeviceName, CompanyId, DeviceType, IssueDate, endDate) 
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 365 DAY))`;
 
-    await db.promise().query(insertDeviceQuery, [DeviceUID, DeviceLocation, DeviceName, CompanyId, SMS, email, type, DeviceType]);
+    await db.promise().query(insertDeviceQuery, [
+      DeviceUID, DeviceLocation, DeviceName, CompanyId, DeviceTrigger, DeviceType
+    ]);
 
-    return res.json({ message: 'Device added successfully!' });
+    // Insert trigger info into tms_trigger
+    const insertTriggerQuery = `
+      INSERT INTO tms_trigger 
+      (DeviceUID, TriggerValue, UserId, CompanyEmail, ContactNo) 
+      VALUES (?, ?, ?, ?, ?)`;
+
+    await db.promise().query(insertTriggerQuery, [
+      DeviceUID, DeviceTrigger, UserId, CompanyEmail, ContactNo
+    ]);
+
+    return res.json({ message: 'Device and trigger added successfully!' });
 
   } catch (error) {
     console.error('Database error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
-
 
 
 async function editDevice(req, res) {
