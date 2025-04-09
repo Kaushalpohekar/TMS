@@ -414,6 +414,7 @@ async function UpdateWhatsapp(req, res) {
     const { Whatsapp } = req.body;
     const CompanyId = req.user.CompanyId;
     
+    console.log("updating whatsapp");
     // Step 1: Verify if the device exists and belongs to the company
     const [deviceResult] = await db.promise().query(
       'SELECT CompanyId FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?',
