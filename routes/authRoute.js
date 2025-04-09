@@ -5,7 +5,7 @@ const {authenticateUser} = require('../token/jwtUtils');
 
 router.post('/register', authController.registerUser);
 router.post('/login', authController.loginUser);
-router.post('/register-dashboard', authController.register_dashboard);
+router.post('/register-dashboard', authController.registerUser);
 router.get('/user', authController.getUserDetails);
 router.post('/verify', authController.verifyToken);
 router.post('/re-verify-mail', authController.resendToken);

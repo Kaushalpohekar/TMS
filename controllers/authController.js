@@ -871,7 +871,6 @@ async function registerUser(req, res) {
       personalEmail,
       designation,
       password,
-      confirmPassword,
       userType
     } = req.body;
 
