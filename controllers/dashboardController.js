@@ -1609,7 +1609,7 @@ const fetchLatestEntry = async (req, res) => {
 };
 
 function removeUser(req, res) {
-  const userId = req.user.UserId; 
+  const userId = req.params.userId; 
   const getUserQuery = 'SELECT * FROM tms_users WHERE UserId = ?';
   db.query(getUserQuery, [userId], (error, userResult) => {
     if (error) {
