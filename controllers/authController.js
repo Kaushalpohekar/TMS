@@ -9,8 +9,134 @@ const fs = require('fs').promises;;
 const ejs = require('ejs');
 require('dotenv').config();
 
+function generateUserId() {
+  const userIdLength = 10;
+  let userId = '';
+
+  const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+  for (let i = 0; i < userIdLength; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    userId += characters.charAt(randomIndex);
+  }
+
+  return userId;
+}
 
 
+
+function register_dashboard(req, res) {
+  const {
+    companyName,
+    companyEmail,
+    contact,
+    location,
+    firstName,
+    lastName,
+    personalEmail,
+    designation,
+    password,
+    userType
+  } = req.body;
+
+  const name = `${firstName} ${lastName}`;
+  const userId = uuidv4();
+
+  // 1. Check if user already exists
+  const checkUserQuery = 'SELECT * FROM tms_users WHERE PersonalEmail = ?';
+  db.query(checkUserQuery, [personalEmail], (err, userResult) => {
+    if (err) {
+      console.error('Error checking user:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    if (userResult.length > 0) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // 2. Check if company already exists
+    const checkCompanyQuery = 'SELECT * FROM tms_companies WHERE CompanyEmail = ?';
+    db.query(checkCompanyQuery, [companyEmail], (err, companyResult) => {
+      if (err) {
+        console.error('Error checking company:', err);
+        return res.status(500).json({ message: 'Internal server error' });
+      }
+
+      let companyId;
+
+      if (companyResult.length > 0) {
+        // Company exists, get the existing CompanyId
+        companyId = companyResult[0].CompanyId;
+        insertUser(companyId);
+      } else {
+        // Company doesn't exist, generate new UUID and insert it
+        companyId = uuidv4();
+        const insertCompanyQuery = 'INSERT INTO tms_companies (CompanyId, CompanyName, CompanyEmail, ContactNo, Location) VALUES (?, ?, ?, ?, ?)';
+        db.query(
+          insertCompanyQuery,
+          [companyId, companyName, companyEmail, contact, location],
+          (err, result) => {
+            if (err) {
+              console.error('Error inserting company:', err);
+              return res.status(500).json({ message: 'Internal server error' });
+            }
+            insertUser(companyId);
+          }
+        );
+      }
+
+      // Function to insert user once we have CompanyId
+      function insertUser(companyId) {
+        bcrypt.hash(password, 10, (err, hashedPassword) => {
+          if (err) {
+            console.error('Error hashing password:', err);
+            return res.status(500).json({ message: 'Internal server error' });
+          }
+
+          const verificationToken = jwtUtils.generateToken({ personalEmail });
+
+          const insertUserQuery = `
+            INSERT INTO tms_users (
+              UserId, Username, FirstName, LastName, CompanyId, UserType,
+              PersonalEmail, Password, Designation, VerificationToken, Verified
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+
+          db.query(
+            insertUserQuery,
+            [
+              userId,
+              personalEmail,
+              firstName,
+              lastName,
+              companyId,
+              userType,
+              personalEmail,
+              hashedPassword,
+              designation,
+              verificationToken,
+              false
+            ],
+            (err, result) => {
+              if (err) {
+                console.error('Error inserting user:', err);
+                return res.status(500).json({ message: 'Internal server error' });
+              }
+
+              try {
+                sendTokenEmail(personalEmail, verificationToken, firstName, lastName);
+                res.json({ message: 'Registration successful. Check your email for verification.' });
+              } catch (emailErr) {
+                console.error('Error sending email:', emailErr);
+                res.status(500).json({ message: 'Error sending verification email' });
+              }
+            }
+          );
+        });
+      }
+    });
+  });
+}
 
 
 
@@ -880,5 +1006,6 @@ module.exports = {
   resetPassword,
   setUserOnline,
   setUserOffline,
-  Block
+  Block,
+  register_dashboard
 };
