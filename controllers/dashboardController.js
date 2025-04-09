@@ -920,39 +920,49 @@ function avg_interval(req, res) {
 
 function getDataByCustomDate(req, res) {
   try {
-    const deviceUID = req.params.deviceUID;
+    const deviceUID = req.params.deviceId;
     const startDate = req.query.start;
     const endDate = req.query.end;
 
     console.log(deviceUID);
+    console.log(startDate);
+    console.log(endDate);
     // const endDate = req.body;
 
-    if (!startDate || !endDate) {
-      return res.status(400).json({ message: 'Invalid parameters' });
-    }
+    // if (!startDate || !endDate) {
+    //   return res.status(400).json({ message: 'Invalid parameters' });
+    // }
 
     const sql = `SELECT
-          DeviceUID,
-          FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (30 * 60)) * (30 * 60)) AS bucket_start_time,
-          AVG(Temperature) AS Temperature,
-          AVG(Humidity) AS Humidity,
-          AVG(flowRate) AS flowRate,
-          AVG(TemperatureR) AS TemperatureR,
-          AVG(TemperatureB) AS TemperatureB ,
-          AVG(TemperatureY) AS TemperatureY,
-          ROUND(AVG(Pressure), 1) AS Pressure,
-          MAX(totalVolume) AS Totalizer,
-          MAX(totalVolume) - MIN(totalVolume) AS totalVolume
-        FROM
-          actual_data
-        WHERE
-          DeviceUID = ? AND TimeStamp >= ? AND TimeStamp <= ?
-        GROUP BY
-          DeviceUID,
-          bucket_start_time
-        ORDER BY
-          DeviceUID,
-          bucket_start_time`;
+  DeviceUID,
+  bucket_start_time,
+  AVG(Temperature) AS Temperature,
+  AVG(Humidity) AS Humidity,
+  AVG(flowRate) AS flowRate,
+  AVG(TemperatureR) AS TemperatureR,
+  AVG(TemperatureB) AS TemperatureB,
+  AVG(TemperatureY) AS TemperatureY,
+  ROUND(AVG(Pressure), 1) AS Pressure,
+  MAX(totalVolume) AS Totalizer,
+  MAX(totalVolume) - MIN(totalVolume) AS totalVolume
+FROM (
+  SELECT
+    DeviceUID,
+    FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (30 * 60)) * (30 * 60)) AS bucket_start_time,
+    Temperature,
+    Humidity,
+    flowRate,
+    TemperatureR,
+    TemperatureB,
+    TemperatureY,
+    Pressure,
+    totalVolume
+  FROM actual_data
+  WHERE DeviceUID = ? AND TimeStamp BETWEEN ? AND ?
+) AS sub
+GROUP BY DeviceUID, bucket_start_time
+ORDER BY DeviceUID, bucket_start_time;
+`;
     //const sql2 = `SELECT * FROM actual_data WHERE DeviceUID = ? AND TimeStamp >= ? AND TimeStamp <= ?`;
     db.query(sql, [deviceUID,startDate + ' 00:00:00', endDate + ' 23:59:59']
       , (fetchError, results) => {
