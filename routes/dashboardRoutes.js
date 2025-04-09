@@ -11,6 +11,7 @@ router.put('/personalDetails/:UserId', authenticateUser, dashController.updatePe
 router.put('/updatePassword/:UserId', authenticateUser, dashController.updatePassword);
 router.post('/addDeviceTrigger', authenticateUser, dashController.addDeviceTrigger);
 router.put('/editDeviceTrigger/:deviceId', authenticateUser, dashController.editDeviceTrigger);
+router.delete('/removeUser/:userId', authenticateUser, dashController.removeUser);
 
 router.get('/live-device-detail/:deviceId', authenticateUser, dashController.getDeviceDetails);
 

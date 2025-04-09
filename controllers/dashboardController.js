@@ -1314,7 +1314,7 @@ function deleteDevice(req, res) {
 
 function editUser(req, res) {
   const UserId = req.user.UserId;
-  const { FirstName, LastName, PersonalEmail, Designation, UserType } = req.body;
+  const { FirstName, LastName, PersonalEmail,ContactNo, Location,  Designation, UserType } = req.body;
 
   try {
     const usersQuery = `
@@ -1608,6 +1608,42 @@ const fetchLatestEntry = async (req, res) => {
   }
 };
 
+function removeUser(req, res) {
+  const userId = req.user.UserId; 
+  const getUserQuery = 'SELECT * FROM tms_users WHERE UserId = ?';
+  db.query(getUserQuery, [userId], (error, userResult) => {
+    if (error) {
+      console.error('Error during user retrieval:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    try {
+      if (userResult.length === 0) {
+        console.log('User not found');
+        return res.status(404).json({ message: 'User not found' });
+      }
+      const deleteUserQuery = 'DELETE FROM tms_users WHERE UserId = ?';
+      db.query(deleteUserQuery, [userId], (error, deleteResult) => {
+        if (error) {
+          console.error('Error during user deletion:', error);
+          return res.status(500).json({ message: 'Internal server error' });
+        }
+
+        try {
+          console.log('User deleted successfully');
+          res.json({ message: 'User deleted successfully' });
+        } catch (error) {
+          console.error('Error responding to user deletion:', error);
+          res.status(500).json({ message: 'Internal server error' });
+        }
+      });
+    } catch (error) {
+      console.error('Error during user removal:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+}
+
 
 module.exports = {
   userDevices,
@@ -1643,7 +1679,8 @@ module.exports = {
   fetchDeviceTotal,
   editDeviceFromSetting,
   last5alerts,
-  getTotalVolumeForTodayEmail
+  getTotalVolumeForTodayEmail,
+  removeUser
 
 }
 
