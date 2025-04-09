@@ -1315,35 +1315,27 @@ function deleteDevice(req, res) {
 function editUser(req, res) {
   const UserId = req.user.UserId;
   const { FirstName, LastName, PersonalEmail, Designation, UserType } = req.body;
-  const UserCheckQuery = 'SELECT * FROM tms_users WHERE UserId = ?';
 
-  db.query(UserCheckQuery, [UserId], (error, UserCheckResult) => {
-    if (error) {
-      console.error('Error during device check:', error);
-      return res.status(500).json({ message: 'Internal server error' });
-    }
- console.log(UserCheckResult);
-    try {
-      if (UserCheckResult.length === 0) {
-        return res.status(400).json({ message: 'User not found!' });
+  try {
+    const usersQuery = `
+      UPDATE tms_users 
+      SET FirstName = ?, LastName = ?, PersonalEmail = ?, Designation = ?, UserType = ?
+      WHERE UserId = ?`;
+
+    db.query(usersQuery, [FirstName, LastName, PersonalEmail, Designation, UserType, UserId], (error, result) => {
+      if (error) {
+        console.error('Error updating user:', error);
+        return res.status(500).json({ message: 'Internal server error' });
       }
 
-      const usersQuery = 'Update tms_users SET FirstName = ?, LastName = ?, PersonalEmail = ?,  Designation = ?, UserType = ? WHERE UserId = ?';
-
-      db.query(usersQuery, [FirstName, LastName, PersonalEmail, Designation, UserType, UserId], (error, devices) => {
-        if (error) {
-          console.error('Error fetching users:', error);
-          return res.status(500).json({ message: 'Internal server error' });
-        }
-
-        res.json({ message: 'User Updated SuccessFully' });
-      });
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
+      res.json({ message: 'User Updated Successfully' });
+    });
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }
+
 
 
 
