@@ -1313,7 +1313,7 @@ function deleteDevice(req, res) {
 
 
 function editUser(req, res) {
-  const UserId = req.user.UserId;
+  const UserId = req.params.userId;
   const { FirstName, LastName, PersonalEmail,ContactNo, Location,  Designation, UserType } = req.body;
 
   try {
