@@ -676,196 +676,63 @@ function fetchAllDeviceTrigger(req, res) {
   }
 }
 
-
 function getDataByTimeInterval(req, res) {
   try {
     const deviceId = req.params.deviceId;
-    const timeInterval = req.query.interval;
-    if (!timeInterval) {
+    const intervalKey = req.query.interval;
+
+    if (!intervalKey) {
       return res.status(400).json({ message: 'Invalid time interval' });
     }
 
-    let sql;
-    switch (timeInterval) {
-      case '1hour':
-        sql = `
-        SELECT
-          DeviceUID,
-          FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / 60) * 60) AS bucket_start_time,
-          IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-          IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-          IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-          IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-          IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-          IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-          IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-        FROM
-          actual_data
-        WHERE
-          DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
-        GROUP BY 
-          DeviceUID,
-          bucket_start_time
-        ORDER BY
-          DeviceUID,
-          bucket_start_time;`;
-        break;
+    // Configuration Map
+    const intervalConfig = {
+      '1hour': { table: 'actual_data', duration: '1 HOUR', bucket: 60 },
+      '12hour': { table: 'actual_data', duration: '12 HOUR', bucket: 120 },
+      '1day': { table: 'actual_data', duration: '1 DAY', bucket: 120 },
+      '7day': { table: 'actual_data', duration: '7 DAY', bucket: 600 },
+      '30day': { table: 'clean_data', duration: '30 DAY', bucket: 1800 },
+      '6month': { table: 'clean_data', duration: '6 MONTH', bucket: 3600 },
+      '12month': { table: 'clean_data', duration: '12 MONTH', bucket: 7200 }
+    };
 
-      case '12hour':
-        sql = `
-        SELECT
-          DeviceUID,
-          FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (2 * 60)) * (2 * 60)) AS bucket_start_time,
-          IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-          IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-          IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-          IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-          IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-          IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-          IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-        FROM
-          actual_data
-        WHERE
-          DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 12 HOUR)
-        GROUP BY
-          DeviceUID,
-          bucket_start_time
-        ORDER BY
-          DeviceUID,
-          bucket_start_time;`;
-        break;
+    const config = intervalConfig[intervalKey];
 
-      case '1day':
-        sql = `
-        SELECT
-          DeviceUID,
-          FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (2 * 60)) * (2 * 60)) AS bucket_start_time,
-          IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-          IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-          IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-          IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-          IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-          IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-          IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-        FROM
-          actual_data
-        WHERE
-          DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-        GROUP BY
-          DeviceUID,
-          bucket_start_time
-        ORDER BY
-          DeviceUID,
-          bucket_start_time;`;
-        break;
-
-      case '7day':
-        sql = `
-        SELECT
-          DeviceUID,
-          FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (10 * 60)) * (10 * 60)) AS bucket_start_time,
-          IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-          IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-          IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-          IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-          IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-          IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-          IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-        FROM
-          actual_data
-        WHERE
-          DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        GROUP BY
-          DeviceUID,
-          bucket_start_time
-        ORDER BY
-          DeviceUID,
-          bucket_start_time;`;
-        break;
-
-      case '30day':
-        sql = `
-        SELECT
-          DeviceUID,
-          FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (30 * 60)) * (30 * 60)) AS bucket_start_time,
-          IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-          IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-          IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-          IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-          IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-          IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-          IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-        FROM
-          clean_data
-        WHERE
-          DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-        GROUP BY
-          DeviceUID,
-          bucket_start_time
-        ORDER BY
-          DeviceUID,
-          bucket_start_time;`;
-        break;
-
-      case '6month':
-        sql = `
-          SELECT
-            DeviceUID,
-            FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (60 * 60)) * (60 * 60)) AS bucket_start_time,
-            IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-            IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-            IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-            IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-            IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-            IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-            IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-          FROM
-            clean_data
-          WHERE
-            DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-          GROUP BY
-            DeviceUID,
-            bucket_start_time
-          ORDER BY
-            DeviceUID,
-            bucket_start_time;`;
-        break;
-
-      case '12month':
-        sql = `
-          SELECT
-            DeviceUID,
-            FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / (120 * 60)) * (120 * 60)) AS bucket_start_time,
-            IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
-            IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
-            IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
-            IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
-            IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
-            IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
-            IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
-          FROM
-            clean_data
-          WHERE
-            DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-          GROUP BY
-            DeviceUID,
-            bucket_start_time
-          ORDER BY
-            DeviceUID,
-            bucket_start_time;`;
-        break;
-
-      default:
-        return res.status(400).json({ message: 'Invalid time interval' });
+    if (!config) {
+      return res.status(400).json({ message: 'Invalid time interval' });
     }
 
-    db.query(sql, [deviceId], (error, results) => {
+    const sql = `
+  SELECT
+    DeviceUID,
+    bucket_time AS bucket_start_time,
+    IFNULL(ROUND(AVG(Temperature), 1), 0) AS Temperature,
+    IFNULL(ROUND(AVG(Humidity), 1), 0) AS Humidity,
+    IFNULL(ROUND(AVG(flowRate), 1), 0) AS flowRate,
+    IFNULL(ROUND(AVG(TemperatureR), 1), 0) AS TemperatureR,
+    IFNULL(ROUND(AVG(TemperatureB), 1), 0) AS TemperatureB,
+    IFNULL(ROUND(AVG(TemperatureY), 1), 0) AS TemperatureY,
+    IFNULL(ROUND(AVG(Pressure), 1), 0) AS Pressure
+  FROM (
+    SELECT *,
+      FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(TimeStamp) / ?) * ?) AS bucket_time
+    FROM ${config.table}
+    WHERE DeviceUID = ? AND TimeStamp >= DATE_SUB(NOW(), INTERVAL ${config.duration})
+  ) AS sub
+  GROUP BY DeviceUID, bucket_time
+  ORDER BY DeviceUID, bucket_time;
+`;
+
+
+    // Execute with parameters: bucket_interval, bucket_interval, deviceId
+    db.query(sql, [config.bucket, config.bucket, deviceId], (error, results) => {
       if (error) {
         console.error('Error fetching data:', error);
         return res.status(500).json({ message: 'Internal server error' });
       }
       res.json({ data: results });
     });
+
   } catch (error) {
     console.error('An error occurred:', error);
     res.status(500).json({ message: 'Internal server error' });
