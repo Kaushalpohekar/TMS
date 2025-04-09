@@ -487,7 +487,24 @@ function getTriggerData(req, res) {
       return res.status(404).json({ message: 'No trigger data found for this company' });
     }
 
-    res.status(200).json(result);
+    // Format the result to match required key names and structure
+    const formattedResult = result.map(row => ({
+      DeviceUID: row.DeviceUID,
+      TriggerValue: row.TriggerValue,
+      CompanyEmail: row.CompanyEmail,
+      ContactNO: row.ContactNo,
+      PersonalEmail: row.personalemail,
+      timestamp: row.timestamp,  // ISO format is preserved
+      company_name: row.CompanyName,
+      DeviceName: row.deviceName,
+      interval: row.interval,
+      Whatsapp: row.Whatsapp,
+      Mail: row.Mail,
+      interval_start: row.interval_start,
+      interval_end: row.interval_end
+    }));
+
+    res.status(200).json(formattedResult);
   });
 }
 
