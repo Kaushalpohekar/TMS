@@ -174,7 +174,7 @@ function sendTokenEmail(email, token, firstName, lastName) {
     const html = compiledTemplate({ token, firstName, lastName });
 
     const mailOptions = {
-      from: 'your-email@example.com', // Replace with the sender's email address
+      from: 'borkarprerana2706@gmail.com', // Replace with the sender's email address
       to: email,
       subject: 'Registration Token',
       html: html,
