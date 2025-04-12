@@ -1429,11 +1429,12 @@ function fetchDeviceTotal(req, res) {
 }
 
 function editDeviceFromSetting(req, res) {
-  const deviceUID = req.params.deviceUID;
+  const deviceUID = req.params.deviceID;
   const companyId = req.user.CompanyId;
 
-  const { DeviceLocation, DeviceName, DeviceTrigger, DeviceType } = req.body;
+  const { DeviceLocation, DeviceName,  DeviceType } = req.body;
 
+ 
   // Step 1: Check if the device belongs to the given company
   const checkDeviceQuery = 'SELECT CompanyId FROM tms_devices WHERE DeviceUID = ?';
 
@@ -1464,17 +1465,8 @@ function editDeviceFromSetting(req, res) {
         return res.status(500).json({ message: 'Internal server error' });
       }
 
-      // Step 3: Update trigger value in tms_trigger table
-      const updateTriggerQuery = 'UPDATE tms_trigger SET TriggerValue = ? WHERE DeviceUID = ?';
-
-      db.query(updateTriggerQuery, [DeviceTrigger, deviceUID], (triggerError) => {
-        if (triggerError) {
-          console.error('Error updating trigger:', triggerError);
-          return res.status(500).json({ message: 'Internal server error' });
-        }
-
-        res.json({ message: 'Device Updated Successfully' });
-      });
+     
+      res.json({ message: 'Device Updated Successfully' });
     });
   });
 }
