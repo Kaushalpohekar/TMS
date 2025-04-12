@@ -25,7 +25,7 @@ function generateUserId() {
 
 
 
-function register_dashboard(req, res) {
+function register(req, res) {
   const {
     companyName,
     companyEmail,
@@ -1010,5 +1010,6 @@ module.exports = {
   setUserOnline,
   setUserOffline,
   Block,
-  register_dashboard
+  register
+
 };
