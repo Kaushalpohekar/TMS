@@ -36,10 +36,10 @@ function register_dashboard(req, res) {
     personalEmail,
     designation,
     password,
-    userType
+    
   } = req.body;
 
-  const name = `${firstName} ${lastName}`;
+  
   const userId = uuidv4();
 
   // 1. Check if user already exists
@@ -110,7 +110,7 @@ function register_dashboard(req, res) {
               firstName,
               lastName,
               companyId,
-              userType,
+              'Admin',
               personalEmail,
               hashedPassword,
               designation,
@@ -874,7 +874,8 @@ async function registerUser(req, res) {
       userType
     } = req.body;
 
-  
+   
+    
 
     // Check if personal email already exists
     const [personalEmailCheck] = await db.promise().query(

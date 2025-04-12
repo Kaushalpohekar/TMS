@@ -3,7 +3,7 @@ const authController = require('../controllers/authController');
 const router = express.Router();
 const {authenticateUser} = require('../token/jwtUtils');
 
-router.post('/register', authController.registerUser);
+router.post('/register', authController.register_dashboard);
 router.post('/login', authController.loginUser);
 router.post('/register-dashboard', authController.registerUser);
 router.get('/user', authController.getUserDetails);
