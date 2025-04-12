@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Threshold Alert</title>
+    <style>
+        /* Apple System Font Stack */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f4f8;
+            padding: 1.8rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            background: #ffffff;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* .container:hover {
+            transform: scale(1.02);
+        } */
+
+        .header {
+            background: linear-gradient(135deg, #ff3b30, #ff8a00);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+            border-bottom-left-radius: 50% 10%;
+            border-bottom-right-radius: 50% 10%;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .content {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .content h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 1rem;
+        }
+
+        .content p {
+            font-size: 0.8rem;
+            font-weight: 550;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 1.2rem;
+        }
+
+        .status-card {
+            background: #f9fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            text-align: left;
+            box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e5e9;
+            font-size: 0.8rem;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-item span {
+            color: #1d1d1f;
+            font-weight: 550;
+        }
+
+        .status-item span:first-child {
+            color: #888;
+            font-weight: 400;
+        }
+
+        .status-item .alert {
+            color: #ff3b30;
+            font-weight: 600;
+        }
+
+        .action-button {
+            display: inline-block;
+            padding: 0.85rem 2.2rem;
+            background: linear-gradient(135deg, #0071e3, #0095ff);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 113, 227, 0.3);
+        }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #005bb5, #0071e3);
+            transform: scale(1.05);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            border-top: 1px solid #e5e5e9;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: #0071e3;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #18181b;
+            }
+
+            .container {
+                background: #222;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #ff453a, #ff8a00);
+            }
+
+            .content h2,
+            .status-item span {
+                color: #f5f5f7;
+            }
+
+            .status-card {
+                background: #333;
+            }
+
+            .status-item span:first-child {
+                color: #aaa;
+            }
+
+            .footer {
+                border-color: #444;
+                color: #bbb;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚨 Threshold Alert</h1>
+            <p>Your device has reached its critical limit</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h2>Immediate Action Required</h2>
+            <p>Your device has exceeded its safe operating threshold. Please review the details below and take necessary
+                action.</p>
+
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-item">
+                    <span>Device - </span>
+                    <span>  <%= deviceName %>  🏭</span>
+                </div>
+                <div class="status-item">
+                    <span>Current Temp - </span>
+                    <span class="alert"> <%= currentTemp %>°C 🔥</span>
+                </div>
+                <div class="status-item">
+                    <span>Threshold - </span>
+                    <span> <%= thresholdTemp %>°C ⚠️</span>
+                </div>
+                <div class="status-item">
+                    <span>Timestamp - </span>
+                    <span> <%= timestamp %> ⏱️</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is an automated alert. <a href="https://senselive.io">SenseLive Technologies | 2025</a></p>
+            <!-- <a href="#">Unsubscribe</a> | <a href="#">Support</a> -->
+        </div>
+    </div>
+</body>
+
+</html>

@@ -506,7 +506,7 @@ function forgotPassword(req, res) {
 
       // Save the reset token in the database
       const userId = rows[0].UserId;
-      const insertQuery = 'INSERT INTO tms_reset_tokens (UserId, token) VALUES (?, ?)';
+      const insertQuery = 'INSERT INTO tms_reset_token (UserId, token) VALUES (?, ?)';
       db.query(insertQuery, [userId, resetToken], (error, insertResult) => {
         try {
           if (error) {
