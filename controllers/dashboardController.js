@@ -657,6 +657,18 @@ async function deletetriggeruser(req, res) {
 function fetchDeviceTrigger(req, res) {
   const deviceId = req.params.deviceId;
   
+  const CompanyId = req.user.CompanyId; // Ensure `req.user` is set properly
+
+   
+      // 1️⃣ Check if the device exists and belongs to the company
+      const [deviceResult] =db.promise().query(
+        "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
+        [deviceId, CompanyId]
+      );
+  
+      if (deviceResult.length === 0) {
+        return res.status(404).json({ message: "Unauthorized user" });
+      }
   
   const query = `
     SELECT 
