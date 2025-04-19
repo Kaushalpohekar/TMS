@@ -146,9 +146,9 @@ function sendTokenEmail(email, token, firstName, lastName) {
     port: 465,
     secure: true,
     auth: {
-      user: 'kpohekar19@gmail.com',
-      pass: 'woptjevenzhqmrpp',
-    },
+      user: process.env.EMAIL_USER, // Use env variables
+      pass: process.env.EMAIL_PASS,
+  },  
   });
 
   // Generate a UUID for the email
@@ -159,6 +159,7 @@ function sendTokenEmail(email, token, firstName, lastName) {
 
   // Read the email template file
   const templatePath = path.join(__dirname, '../mail-body/email-template.ejs');
+
   fs.readFile(templatePath, 'utf8', (err, templateData) => {
     if (err) {
       console.error('Error reading email template:', err);
@@ -174,7 +175,7 @@ function sendTokenEmail(email, token, firstName, lastName) {
     const html = compiledTemplate({ token, firstName, lastName });
 
     const mailOptions = {
-      from: 'your-email@example.com', // Replace with the sender's email address
+      from:  process.env.EMAIL_USER, // Replace with the sender's email address
       to: email,
       subject: 'Registration Token',
       html: html,
@@ -202,9 +203,10 @@ function sendTokenDashboardEmail(email, token) {
     port: 465,
     secure: true,
     auth: {
-      user: 'kpohekar19@gmail.com',
-      pass: 'woptjevenzhqmrpp',
-    },
+        user: process.env.EMAIL_USER, // Use env variables
+        pass: process.env.EMAIL_PASS,
+    },   
+    
   });
 
   // Generate a UUID for the email
@@ -230,7 +232,7 @@ function sendTokenDashboardEmail(email, token) {
     const html = compiledTemplate({ token });
 
     const mailOptions = {
-      from: 'your-email@example.com',
+      from: process.env.EMAIL_USER, 
       to: email,
       subject: 'Registration Token',
       html: html,
@@ -258,9 +260,9 @@ function sendResetTokenEmail(personalEmail, resetToken) {
     port: 465,
     secure: true,
     auth: {
-      user: 'kpohekar19@gmail.com',
-      pass: 'woptjevenzhqmrpp',
-    },
+      user: process.env.EMAIL_USER, // Use env variables
+      pass: process.env.EMAIL_PASS,
+  }, 
   });
 
   // Generate a UUID for the email
@@ -286,7 +288,7 @@ function sendResetTokenEmail(personalEmail, resetToken) {
     const html = compiledTemplate({ resetToken });
 
     const mailOptions = {
-      from: 'kpohekar19@gmail.com',
+      from: process.env.EMAIL_USER, 
       to: personalEmail,
       subject: 'Reset Password Link',
       html: html,
@@ -936,7 +938,7 @@ async function registerUser(req, res) {
     );
 
     // Send verification token via email
-    await sendTokenEmail(personalEmail, verificationToken, firstName, lastName);
+    await sendTokenDashboardEmail(personalEmail, verificationToken);
 
     res.status(201).json({ message: "Registration successful. Check your email for the verification token." });
   } catch (error) {

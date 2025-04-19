@@ -73,7 +73,8 @@ async function userDevices(req, res) {
 
 async function addDevice(req, res) {
   const { DeviceUID, DeviceLocation, DeviceName, DeviceTrigger, DeviceType } = req.body;
-  console.log()
+
+ 
   const CompanyId = req.user.CompanyId; // from logged-in user
   const UserId = req.user.UserId;       // assumed from req.user
   const CompanyEmail = req.user.CompanyEmail; // assumed from req.user
@@ -681,7 +682,7 @@ function fetchDeviceTrigger(req, res) {
     WHERE trg.DeviceUID = ?
     LIMIT 1
   `;
-  console.log(deviceId);
+  
   try {
     db.query(query, [deviceId], (error, devicetriggerkResult) => {
       if (error) {
@@ -916,14 +917,13 @@ function getLiveStatusDetails(req, res) {
     // Validate the deviceId parameter if necessary
 
 
-    console.log(deviceUID);
     const liveStatusQuery = 'SELECT * FROM actual_data WHERE DeviceUID = ? ORDER BY TimeStamp DESC LIMIT 1';
     db.query(liveStatusQuery, [deviceUID], (error, liveStatus) => {
       if (error) {
         console.error('Error fetching data:', error);
         return res.status(500).json({ message: 'Internal server error' });
       }
-      console.log(liveStatus);
+     
 
       if (liveStatus.length === 0) {
         // Handle the case when no live status details are found
@@ -1484,7 +1484,7 @@ function last5alerts(req, res) {
       console.error('Error fetching trigger value', err);
       return res.status(500).send('Error occurred');
     }
-    console.log(triggerValueResult);
+    
 
     if (triggerValueResult.length === 0) {
       return res.status(404).send('Trigger value not found');
@@ -1493,7 +1493,7 @@ function last5alerts(req, res) {
     
     const TriggerValue = triggerValueResult[0].TriggerValue;
 
-    console.log(TriggerValue);
+   
     // Combine the four temperature parameters into the WHERE clause
     const query = `
       SELECT TimeStamp, Temperature, TemperatureR, TemperatureY, TemperatureB

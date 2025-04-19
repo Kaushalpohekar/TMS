@@ -5,7 +5,7 @@ const authRoute = require('./routes/authRoute');
 const dashRoute = require('./routes/dashboardRoutes');
 
 const app = express();
-const port = 4000;
+const port = 4000 ;
 
 app.use(cors());
 app.use(express.json());
