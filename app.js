@@ -10,9 +10,21 @@ const port = 4000 ;
 app.use(cors());
 app.use(express.json());
 
-// ✅ Mount both under same base route
+
+
 app.use('/api', authRoute);
 app.use('/api', dashRoute);
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+      // Malformed JSON error
+      return res.status(400).json({ message: 'Invalid JSON format in request body.' });
+  }
+
+  console.error('Internal error:', err.message); // Logs to console only
+  res.status(500).json({ message: 'Something went wrong. Please try again later.' });
+});
+
 
 // Optional base route check
 app.get('/', (req, res) => {
