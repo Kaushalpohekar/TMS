@@ -626,8 +626,6 @@ async function deletetriggeruser(req, res) {
   const DeviceUID = req.params.DeviceUID;
   const CompanyId = req.user.CompanyId; // Ensure `req.user` is set properly
 
-  console.log(CompanyId);
-  console.log(DeviceUID);
   try {
     // 1️⃣ Check if the device exists and belongs to the company
     const [deviceResult] = await db.promise().query(
@@ -855,14 +853,7 @@ function getDataByCustomDate(req, res) {
     const startDate = req.query.start;
     const endDate = req.query.end;
 
-    console.log(deviceUID);
-    console.log(startDate);
-    console.log(endDate);
-    // const endDate = req.body;
-
-    // if (!startDate || !endDate) {
-    //   return res.status(400).json({ message: 'Invalid parameters' });
-    // }
+    
 
     const sql = `SELECT
   DeviceUID,
@@ -915,7 +906,19 @@ function getLiveStatusDetails(req, res) {
     const deviceUID = req.params.deviceId;
 
     // Validate the deviceId parameter if necessary
+    const CompanyId = req.user.CompanyId; // Ensure `req.user` is set properly
 
+   
+      // 1️⃣ Check if the device exists and belongs to the company
+      const [deviceResult] =db.promise().query(
+        "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
+        [deviceUID, CompanyId]
+      );
+  
+      if (deviceResult.length === 0) {
+        return res.status(404).json({ message: "Unauthorized user" });
+      }
+  
 
     const liveStatusQuery = 'SELECT * FROM actual_data WHERE DeviceUID = ? ORDER BY TimeStamp DESC LIMIT 1';
     db.query(liveStatusQuery, [deviceUID], (error, liveStatus) => {
@@ -1475,6 +1478,18 @@ function last5alerts(req, res) {
   const deviceUID = req.params.deviceUID;
   const UserId = req.user.UserId;
 
+  const CompanyId = req.user.CompanyId; // Ensure `req.user` is set properly
+
+   
+      // 1️⃣ Check if the device exists and belongs to the company
+      const [deviceResult] =db.promise().query(
+        "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
+        [deviceUID, CompanyId]
+      );
+  
+      if (deviceResult.length === 0) {
+        return res.status(404).json({ message: "Unauthorized user" });
+      }
   // check connection
   const triggerValueQuery = `SELECT TriggerValue FROM tms_trigger WHERE DeviceUID = ?;`;
 
