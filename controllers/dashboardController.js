@@ -913,7 +913,7 @@ ORDER BY DeviceUID, bucket_start_time;
   }
 }
 
-function getLiveStatusDetails(req, res) {
+async function getLiveStatusDetails(req, res) {
   try {
     const deviceUID = req.params.deviceId;
 
@@ -922,7 +922,7 @@ function getLiveStatusDetails(req, res) {
 
    
       // 1️⃣ Check if the device exists and belongs to the company
-      const [deviceResult] =db.promise().query(
+      const [deviceResult] =await db.promise().query(
         "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
         [deviceUID, CompanyId]
       );
