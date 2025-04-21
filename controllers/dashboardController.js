@@ -654,14 +654,14 @@ async function deletetriggeruser(req, res) {
 }
 
 
-function fetchDeviceTrigger(req, res) {
+async function fetchDeviceTrigger(req, res) {
   const deviceId = req.params.deviceId;
   
   const CompanyId = req.user.CompanyId; // Ensure `req.user` is set properly
 
    
       // 1️⃣ Check if the device exists and belongs to the company
-      const [deviceResult] =db.promise().query(
+      const [deviceResult] =await db.promise().query(
         "SELECT * FROM tms_devices WHERE DeviceUID = ? AND CompanyId = ?",
         [deviceId, CompanyId]
       );
@@ -694,7 +694,7 @@ function fetchDeviceTrigger(req, res) {
   `;
   
   try {
-    db.query(query, [deviceId], (error, devicetriggerkResult) => {
+  db.query(query, [deviceId], (error, devicetriggerkResult) => {
       if (error) {
         console.error('Error during device check:', error);
         return res.status(500).json({ message: 'Internal server error' });
